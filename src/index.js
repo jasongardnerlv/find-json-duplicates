@@ -9,56 +9,57 @@ export function findJsonDuplicatesFromFiles(jsonArray, options) {
 export function findJsonDuplicates(jsonArray, options) {
   const dict = {};
   jsonArray.forEach(file => {
-    if (!!options.values)
-      mapPropertyValues(options, dict, file.json, file.filename);
-    else
-      mapPropertyKeys(options, dict, file.json, file.filename);
+    if (!!options.values) {
+      mapPropertyValues(true, options, dict, file.json, file.filename);
+      mapPropertyValues(false, options, dict, file.json, file.filename);
+    } else {
+      mapPropertyKeys(true, options, dict, file.json, file.filename);
+      mapPropertyKeys(false, options, dict, file.json, file.filename);
+    }
   });
   return dict;
 }
 
-const mapPropertyKeys = (options, dict, json, filename, path) => {
+const mapPropertyKeys = (indexPhase, options, dict, json, filename, path) => {
   let newPath;
   Object.keys(json).forEach(k => {
     newPath = !!path ? path + '.' + k : k;
-    if (!dict.hasOwnProperty(k)) dict[k] = [];
     if (Array.isArray(json[k])) {
       //TODO handle array
     } else if (typeof json[k] === 'object' && json[k] !== null) {
-      mapPropertyKeys(options, dict, json[k], filename, newPath);
+      mapPropertyKeys(indexPhase, options, dict, json[k], filename, newPath);
     } else {
-      // if (options.threshold === undefined) {
-      //   dict[k].push({value: json[k], keyPath: newPath, file: filename});
-      // } else {
+      if (indexPhase) {
+        if (!dict.hasOwnProperty(k)) dict[k] = [];
+      } else {
         const fuse = new Fuse(Object.keys(dict), {includeScore:true, threshold: options.threshold});
         fuse.search(k).forEach(r => {
           if (Math.abs(k.length - r.item.length) <= 3 && (options.threshold - r.score >= 0))
             dict[r.item].push({key: k, value: json[k], keyPath: newPath, file: filename, score: r.score});
         });
-      // }
+      }
     }
   })
 }
 
-const mapPropertyValues = (options, dict, json, filename, path) => {
+const mapPropertyValues = (indexPhase, options, dict, json, filename, path) => {
   let newPath;
   Object.keys(json).forEach(k => {
     newPath = !!path ? path + '.' + k : k;
-    if (!dict.hasOwnProperty(json[k])) dict[json[k]] = [];
     if (Array.isArray(json[k])) {
       //TODO handle array
     } else if (typeof json[k] === 'object' && json[k] !== null) {
-      mapPropertyValues(options, dict, json[k], filename, newPath);
+      mapPropertyValues(indexPhase, options, dict, json[k], filename, newPath);
     } else {
-      // if (options.threshold === undefined) {
-      //   dict[json[k]].push({key: k, keyPath: k, file: filename});
-      // } else {
+      if (indexPhase) {
+        if (!dict.hasOwnProperty(json[k])) dict[json[k]] = [];
+      } else {
         const fuse = new Fuse(Object.keys(dict), {includeScore:true, threshold: options.threshold});
         fuse.search(json[k]).forEach(r => {
           if (Math.abs(json[k].length - r.item.length) <= 3 && (options.threshold - r.score >= 0))
             dict[r.item].push({key: k, value: json[k],keyPath: newPath, file: filename, score: r.score});
         });
-      // }
+      }
     }
   })
 }
