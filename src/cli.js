@@ -33,6 +33,13 @@ const sections = [
         description: 'Find duplicate values instead of keys'
       },
       {
+        alias: 'b',
+        name: 'bothKeysAndValues',
+        type: Boolean,
+        typeLabel: '{underline boolean}',
+        description: 'Compare both keys and values for duplicates'
+      },
+      {
         alias: 't',
         name: 'threshold',
         type: Number,

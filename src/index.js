@@ -17,6 +17,7 @@ export function findJsonDuplicates(jsonArray, options) {
       mapPropertyKeys(false, options, dict, file.json, file.filename);
     }
   });
+  if (!!options.bothKeysAndValues) pruneUnlikeMatches(dict, options);
   return dict;
 }
 
@@ -32,10 +33,8 @@ const mapPropertyKeys = (indexPhase, options, dict, json, filename, path) => {
       if (indexPhase) {
         if (!dict.hasOwnProperty(k)) dict[k] = [];
       } else {
-        const fuse = new Fuse(Object.keys(dict), {includeScore:true, threshold: options.threshold});
-        fuse.search(k).forEach(r => {
-          if (Math.abs(k.length - r.item.length) <= 3 && (options.threshold - r.score >= 0))
-            dict[r.item].push({key: k, value: json[k], keyPath: newPath, file: filename, score: r.score});
+        fuzzyMatch(Object.keys(dict), k, options.threshold, r => {
+          if (checkFuzzyResult(r, k, options)) dict[r.item].push({key: k, value: json[k], keyPath: newPath, file: filename, score: r.score});
         });
       }
     }
@@ -54,14 +53,42 @@ const mapPropertyValues = (indexPhase, options, dict, json, filename, path) => {
       if (indexPhase) {
         if (!dict.hasOwnProperty(json[k])) dict[json[k]] = [];
       } else {
-        const fuse = new Fuse(Object.keys(dict), {includeScore:true, threshold: options.threshold});
-        fuse.search(json[k]).forEach(r => {
-          if (Math.abs(json[k].length - r.item.length) <= 3 && (options.threshold - r.score >= 0))
-            dict[r.item].push({key: k, value: json[k],keyPath: newPath, file: filename, score: r.score});
+        fuzzyMatch(Object.keys(dict), json[k], options.threshold, r => {
+          if (checkFuzzyResult(r, json[k], options)) dict[r.item].push({key: k, value: json[k],keyPath: newPath, file: filename, score: r.score});
         });
       }
     }
   })
+}
+
+const pruneUnlikeMatches = (dict, options) => {
+  let matches, valueField;
+  Object.keys(dict).forEach(k => {
+    matches = [];
+    dict[k].forEach((v, idx) => {
+      valueField = !options.values ? 'value' : 'key';
+      fuzzyMatch(dict[k].map(o => o[valueField]), v[valueField], options.threshold, r => {
+        if (r.refIndex !== idx) {
+          if (checkFuzzyResult(r, v[valueField], options)) {
+            matches.push([idx, r.refIndex]);
+          }
+        }
+      });
+    })
+    matches = [...new Set(matches.flat())];
+    for (let i = dict[k].length - 1; i >= 0; i--) {
+      if (!matches.includes(i)) dict[k].splice(i, 1);
+    }
+  });
+}
+
+const fuzzyMatch = (list, term, threshold, onMatch) => {
+  const fuse = new Fuse(list, {includeScore:true, threshold: threshold});
+  fuse.search(term).forEach(onMatch);
+}
+
+const checkFuzzyResult = (result, compareVal, options) => {
+  return (Math.abs(compareVal.length - result.item.length) <= 3 && (options.threshold - result.score >= 0));
 }
 
 const generateOutput = (dict, options) => {
