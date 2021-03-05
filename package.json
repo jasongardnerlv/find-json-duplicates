@@ -1,0 +1,42 @@
+{
+  "name": "find-json-duplicates",
+  "version": "1.0.0",
+  "description": "Find duplicated keys or values in json files (any depth, with fuzzy matching).",
+  "bin": "build/cli.js",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "",
+    "dist": "./node_modules/.bin/babel src --out-dir build",
+    "start": "node ./build/cli",
+    "prepublishOnly": "yarn && yarn dist"
+  },
+  "keywords": [
+    "JSON",
+    "duplicate",
+    "duplicates",
+    "property",
+    "properties",
+    "key",
+    "keys",
+    "value",
+    "values"
+  ],
+  "author": "Jason Gardner",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/cli": "^7.13.0",
+    "@babel/core": "^7.13.8",
+    "@babel/preset-env": "^7.13.9",
+    "babel-plugin-add-module-exports": "^1.0.4",
+    "chalk": "^4.1.0",
+    "command-line-args": "^5.1.1",
+    "command-line-usage": "^6.1.1",
+    "fuse.js": "^6.4.6"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jasongardnerlv/find-json-duplicates.git"
+  },
+  "bugs": "https://github.com/jasongardnerlv/find-json-duplicates/issues"
+}

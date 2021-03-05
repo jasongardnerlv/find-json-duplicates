@@ -1,0 +1,6 @@
+.git/
+src/
+.babelrc
+.gitignore
+.npmignore
+yarn.lock
